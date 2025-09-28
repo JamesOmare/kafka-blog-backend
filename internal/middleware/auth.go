@@ -7,6 +7,17 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 )
 
+type contextKey string
+
+const UserContextKey contextKey = "user"
+
+type UserClaims struct {
+	UserID   int    `json:"user_id"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
+	Username string `json:"username"`
+}
+
 // RequireRole middleware to check user roles
 // This runs AFTER jwtauth.Verifier and jwtauth.Authenticator
 func RequireRole(requiredRole string) func(http.Handler) http.Handler {
@@ -48,25 +59,25 @@ func GetUserFromContext(ctx context.Context) (map[string]interface{}, bool) {
 
 // Optional: Custom JSON error authenticator (alternative to jwtauth.Authenticator)
 // Use this if you want JSON error responses instead of plain text
-func JSONAuthenticator(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, _, err := jwtauth.FromContext(r.Context())
+// func JSONAuthenticator(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		token, _, err := jwtauth.FromContext(r.Context())
 
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"error": "Invalid token", "message": "Token verification failed"}`))
-			return
-		}
+// 		if err != nil {
+// 			w.Header().Set("Content-Type", "application/json")
+// 			w.WriteHeader(http.StatusUnauthorized)
+// 			w.Write([]byte(`{"error": "Invalid token", "message": "Token verification failed"}`))
+// 			return
+// 		}
 
-		if token == nil || !token.Valid {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"error": "Unauthorized", "message": "Valid token required"}`))
-			return
-		}
+// 		if token == nil || !token.Valid {
+// 			w.Header().Set("Content-Type", "application/json")
+// 			w.WriteHeader(http.StatusUnauthorized)
+// 			w.Write([]byte(`{"error": "Unauthorized", "message": "Valid token required"}`))
+// 			return
+// 		}
 
-		// Token is valid, proceed to next handler
-		next.ServeHTTP(w, r)
-	})
-}
+// 		// Token is valid, proceed to next handler
+// 		next.ServeHTTP(w, r)
+// 	})
+// }
