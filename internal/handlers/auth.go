@@ -66,14 +66,15 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Save user to database
-	user, err := h.userService.CreateUser(req.Username, req.Email, hashedPassword)
+	// user, err := h.userService.CreateUser(req.Username, req.Email, hashedPassword)
 	// For now, creating a mock user response
-	// user := models.User{
-	// 	ID:       1, // This should come from database
-	// 	Username: req.Username,
-	// 	Email:    req.Email,
-	// 	Role:     "user", // Default role
-	// }
+	user := models.User{
+		ID:       1, // This should come from database
+		Username: req.Username,
+		Email:    req.Email,
+		Role:     "user", // Default role
+		Password: hashedPassword,
+	}
 
 	// Generate JWT token
 	token, err := h.authService.GenerateToken(user.ID, user.Email, user.Username, user.Role)
@@ -136,32 +137,3 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
-
-// func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-// 	// Get user from context (set by JWT middleware)
-// 	claims, ok := middleware.GetUserFromContext(r.Context())
-// 	if !ok {
-// 		http.Error(w, "User not found", http.StatusUnauthorized)
-// 		return
-// 	}
-
-// 	// Extract user info from claims
-// 	userID, _ := claims["user_id"].(float64) // JSON numbers are float64
-// 	username, _ := claims["username"].(string)
-// 	email, _ := claims["email"].(string)
-// 	role, _ := claims["role"].(string)
-
-// 	// TODO: Get full user details from database
-// 	// user, err := h.userService.GetUserByID(int(userID))
-
-// 	// For now, return user from claims
-// 	user := models.User{
-// 		ID:       int(userID),
-// 		Username: username,
-// 		Email:    email,
-// 		Role:     role,
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/json")
-// 	json.NewEncoder(w).Encode(user)
-// }

@@ -23,7 +23,7 @@ type Server struct {
 	port        int
 	db          database.Service
 	router      chi.Router
-	handlers    *handlers.Handler
+	handlers    *handlers.Handlers
 	config      *config.Config
 	authService *services.AuthService
 }

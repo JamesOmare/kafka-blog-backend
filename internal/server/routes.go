@@ -34,14 +34,14 @@ func (s *Server) setupRoutes() http.Handler {
 		// Public routes - No JWT required
 		r.Group(func(r chi.Router) {
 			// Auth routes
-			r.Post("/auth/register", s.handlers.Register)
-			r.Post("/auth/login", s.handlers.Login)
+			r.Post("/auth/register", s.handlers.Auth.Register)
+			r.Post("/auth/login", s.handlers.Auth.Login)
 
 			// Public blog routes
-			r.Get("/posts", s.handlers.GetPublishedPosts)
-			r.Get("/posts/{slug}", s.handlers.GetPostBySlug)
-			r.Get("/posts/{id}/comments", s.handlers.GetPostComments)
-			r.Get("/tags", s.handlers.GetTags)
+			// r.Get("/posts", s.handlers.GetPublishedPosts)
+			// r.Get("/posts/{slug}", s.handlers.GetPostBySlug)
+			// r.Get("/posts/{id}/comments", s.handlers.GetPostComments)
+			// r.Get("/tags", s.handlers.GetTags)
 		})
 
 		// Protected routes - JWT required
@@ -56,13 +56,13 @@ func (s *Server) setupRoutes() http.Handler {
 			r.Use(jwtauth.Authenticator(tokenAuth))
 
 			// User profile routes
-			r.Get("/profile", s.handlers.GetProfile)
-			r.Put("/profile", s.handlers.UpdateProfile)
+			// r.Get("/profile", s.handlers.GetProfile)
+			// r.Put("/profile", s.handlers.UpdateProfile)
 
 			// Comment routes (authenticated users)
-			r.Post("/posts/{id}/comments", s.handlers.CreateComment)
-			r.Put("/comments/{id}", s.handlers.UpdateComment)
-			r.Delete("/comments/{id}", s.handlers.DeleteComment)
+			// r.Post("/posts/{id}/comments", s.handlers.CreateComment)
+			// r.Put("/comments/{id}", s.handlers.UpdateComment)
+			// r.Delete("/comments/{id}", s.handlers.DeleteComment)
 		})
 
 		// Author/Admin routes - JWT + Role required
@@ -77,14 +77,14 @@ func (s *Server) setupRoutes() http.Handler {
 			r.Use(custommiddleware.RequireRole("author"))
 
 			// Post management
-			r.Get("/admin/posts", s.handlers.GetUserPosts)
-			r.Post("/posts", s.handlers.CreatePost)
-			r.Put("/posts/{id}", s.handlers.UpdatePost)
-			r.Delete("/posts/{id}", s.handlers.DeletePost)
+			// r.Get("/admin/posts", s.handlers.GetUserPosts)
+			// r.Post("/posts", s.handlers.CreatePost)
+			// r.Put("/posts/{id}", s.handlers.UpdatePost)
+			// r.Delete("/posts/{id}", s.handlers.DeletePost)
 
 			// Tag management
-			r.Post("/tags", s.handlers.CreateTag)
-			r.Put("/tags/{id}", s.handlers.UpdateTag)
+			// r.Post("/tags", s.handlers.CreateTag)
+			// r.Put("/tags/{id}", s.handlers.UpdateTag)
 		})
 	})
 
