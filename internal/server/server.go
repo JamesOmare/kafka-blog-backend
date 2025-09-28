@@ -16,14 +16,16 @@ import (
 	"kafka-blog-backend/internal/database"
 	"kafka-blog-backend/internal/handlers"
 	custommiddleware "kafka-blog-backend/internal/middleware"
+	"kafka-blog-backend/internal/services"
 )
 
 type Server struct {
-	port     int
-	db       database.Service
-	router   chi.Router
-	handlers *handlers.Handler
-	config   *config.Config
+	port        int
+	db          database.Service
+	router      chi.Router
+	handlers    *handlers.Handler
+	config      *config.Config
+	authService *services.AuthService
 }
 
 func NewServer(cfg *config.Config, db database.Service) *http.Server {
@@ -32,17 +34,22 @@ func NewServer(cfg *config.Config, db database.Service) *http.Server {
 		port = 8080 // fallback/default port
 	}
 
-	h := handlers.New(db, cfg)
+	// Initialize auth service
+	authService := services.NewAuthService(cfg.JWTSecret)
+
+	// Initialize handlers with auth service
+	h := handlers.New(db, cfg, authService)
+
 	s := &Server{
-		port:     port,
-		db:       db,
-		router:   chi.NewRouter(),
-		handlers: h,
-		config:   cfg,
+		port:        port,
+		db:          db,
+		router:      chi.NewRouter(),
+		handlers:    h,
+		config:      cfg,
+		authService: authService,
 	}
 
 	s.setupMiddleware()
-	s.setupRoutes()
 
 	// Declare Server config
 	server := &http.Server{

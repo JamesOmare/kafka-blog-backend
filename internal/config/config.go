@@ -13,11 +13,20 @@ type Config struct {
 }
 
 func Load() *Config {
+	dbUser := getEnv("DB_USER", "postgres")
+	dbPassword := getEnv("DB_PASSWORD", "password")
+	dbHost := getEnv("DB_HOST", "localhost")
+	dbPort := getEnv("DB_PORT", "5432")
+	dbName := getEnv("DB_NAME", "postgres")
+	sslMode := getEnv("DB_SSLMODE", "disable")
+
+	databaseURL := "postgres://" + dbUser + ":" + dbPassword + "@" + dbHost + ":" + dbPort + "/" + dbName + "?sslmode=" + sslMode
+
 	return &Config{
 		Port:        getEnvAsInt("PORT", 8080),
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://user:password@localhost:5432/dbname"),
+		DatabaseURL: databaseURL,
 		JWTSecret:   getEnv("JWT_SECRET", "defaultsecret"),
-		Environment: getEnv("ENVIRONMENT", "development"),
+		Environment: getEnv("APP_ENV", "local"),
 	}
 }
 

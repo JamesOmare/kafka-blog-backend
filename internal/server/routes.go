@@ -2,27 +2,36 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/jwtauth/v5"
 
 	custommiddleware "kafka-blog-backend/internal/middleware"
 )
 
 func (s *Server) setupRoutes() http.Handler {
 	r := chi.NewRouter()
-	// r.Use(middleware.Logger)
 
-	// r.Use(cors.Handler(cors.Options{
-	// 	AllowedOrigins:   []string{"https://*", "http://*"},
-	// 	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-	// 	AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-	// 	AllowCredentials: true,
-	// 	MaxAge:           300,
-	// }))
+	// Apply global middleware
+	s.setupMiddleware()
+
+	// Get JWT auth instance from auth service
+	tokenAuth := s.authService.GetTokenAuth()
+
+	// For debugging/example purposes, generate and print a sample jwt token
+	_, tokenString, _ := tokenAuth.Encode(map[string]interface{}{
+		"user_id":  123,
+		"username": "testuser",
+		"email":    "test@example.com",
+		"role":     "user",
+	})
+	fmt.Printf("DEBUG: a sample jwt is %s\n\n", tokenString)
+
 	r.Route("/api/v1", func(r chi.Router) {
-		// Public routes
+		// Public routes - No JWT required
 		r.Group(func(r chi.Router) {
 			// Auth routes
 			r.Post("/auth/register", s.handlers.Register)
@@ -35,9 +44,16 @@ func (s *Server) setupRoutes() http.Handler {
 			r.Get("/tags", s.handlers.GetTags)
 		})
 
-		// Protected routes
+		// Protected routes - JWT required
 		r.Group(func(r chi.Router) {
-			r.Use(custommiddleware.JWTAuth(s.config.JWTSecret))
+			// Step 1: Verifier middleware - extracts, decodes, verifies JWT token
+			// Sets jwtauth.TokenCtxKey and jwtauth.ErrorCtxKey in context
+			// Searches for token in: 1) Authorization: Bearer header, 2) jwt cookie
+			r.Use(jwtauth.Verifier(tokenAuth))
+
+			// Step 2: Authenticator middleware - responds with 401 for invalid tokens
+			// Allows valid tokens to pass through to handlers
+			r.Use(jwtauth.Authenticator(tokenAuth))
 
 			// User profile routes
 			r.Get("/profile", s.handlers.GetProfile)
@@ -49,9 +65,15 @@ func (s *Server) setupRoutes() http.Handler {
 			r.Delete("/comments/{id}", s.handlers.DeleteComment)
 		})
 
-		// Author/Admin routes
+		// Author/Admin routes - JWT + Role required
 		r.Group(func(r chi.Router) {
-			r.Use(custommiddleware.JWTAuth(s.config.JWTSecret))
+			// Step 1: Verify JWT token
+			r.Use(jwtauth.Verifier(tokenAuth))
+
+			// Step 2: Authenticate JWT token (401 for invalid)
+			r.Use(jwtauth.Authenticator(tokenAuth))
+
+			// Step 3: Check user role (403 for insufficient permissions)
 			r.Use(custommiddleware.RequireRole("author"))
 
 			// Post management
@@ -67,7 +89,6 @@ func (s *Server) setupRoutes() http.Handler {
 	})
 
 	r.Get("/", s.HelloWorldHandler)
-
 	r.Get("/health", s.healthHandler)
 
 	return r
