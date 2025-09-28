@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"kafka-blog-backend/internal/config"
+	"kafka-blog-backend/internal/database"
 	"kafka-blog-backend/internal/server"
 )
 
@@ -38,14 +40,25 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 }
 
 func main() {
+	// Load configuration
+	cfg := config.Load()
+	log.Printf("Loaded configuration: JWT Secret length = %d", len(cfg.JWTSecret))
 
-	server := server.NewServer()
+	// Initialize database
+	db := database.New()
+	log.Println("Database connection initialized")
+
+	// Create server with dependencies
+	server := server.NewServer(cfg, db)
+	log.Printf("Server initialized on %s", server.Addr)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
 	// Run graceful shutdown in a separate goroutine
 	go gracefulShutdown(server, done)
+
+	log.Printf("Starting server on %s", server.Addr)
 
 	err := server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
